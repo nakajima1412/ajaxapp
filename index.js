@@ -1,40 +1,42 @@
-function main () {
-  fetchUserInfo('nakajima1412')
-    .then((userInfo) => createView(userInfo))
-    .then((view) => displayView(view))
-    .catch((error) => {
-      // Promise チェーンで発生したエラーを受け取る
-      console.error('エラーが発生しました (${error})');
-    });
+async function main() {
+  try {
+      const userId = getUserId();
+      const userInfo = await fetchUserInfo(userId);
+      const view = createView(userInfo);
+      displayView(view);
+  } catch (error) {
+      console.error(`エラーが発生しました (${error})`);
+  }
 }
 
-function fetchUserInfo (userId) {
-  // fetchの戻り値のPromiseをreturnする
-  fetch(`https://api.github.com/users/${encodeURIComponent(userId)}`)
-    .then(response => {
-      console.log (response.status);
-      // エラーレスポンスが返されたことを検知する
-      if (!response.ok) {
-        console.error('エラーレスポンス', response);
-      } else {
-        // JSONオブジェクトで解決されるPromiseを返す
-        return response.json();
-      }
-    });
+function fetchUserInfo(userId) {
+  return fetch(`https://api.github.com/users/${encodeURIComponent(userId)}`)
+      .then(response => {
+          if (!response.ok) {
+              return Promise.reject(new Error(`${response.status}: ${response.statusText}`));
+          } else {
+              return response.json();
+          }
+      });
 }
 
-function createView (userInfo) {
+function getUserId() {
+  const value = document.getElementById("userId").value;
+  return encodeURIComponent(value);
+}
+
+function createView(userInfo) {
   return escapeHTML`
-    <h4>${userInfo.name} (@${userInfo.login})</h4>
-    <img src="${userInfo.avatar_url} alt="${userInfo.login}" height="100">
-    <dl>
+  <h4>${userInfo.name} (@${userInfo.login})</h4>
+  <img src="${userInfo.avatar_url}" alt="${userInfo.login}" height="100">
+  <dl>
       <dt>Location</dt>
       <dd>${userInfo.location}</dd>
       <dt>Repositories</dt>
       <dd>${userInfo.public_repos}</dd>
-    </dl>
-    `;
-  }
+  </dl>
+  `;
+}
 
 function displayView (view) {
   const result = document.getElementById('result');
